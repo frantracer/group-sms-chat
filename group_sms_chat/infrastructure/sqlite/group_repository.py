@@ -15,7 +15,7 @@ class SQLiteGroupRepository(GroupRepository):
             "    group_name TEXT NOT NULL,"
             "    username TEXT NOT NULL,"
             "    user_group_phone_number TEXT NOT NULL,"
-            "    PRIMARY KEY (group_name, username)"
+            "    PRIMARY KEY (group_name, username))"
         )
         self.connection.commit()
 
