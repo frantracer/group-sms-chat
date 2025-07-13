@@ -1,8 +1,10 @@
+import os
+import urllib.parse
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 
 from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
 from group_sms_chat.application.find_groups_handler import FindGroupsHandler
@@ -20,7 +22,6 @@ from group_sms_chat.domain.exceptions import (
 from group_sms_chat.domain.group import GroupName
 from group_sms_chat.domain.user import HashedPassword, PhoneNumber, User, Username, UserPassword
 from group_sms_chat.infrastructure.fastapi.models.group import Group
-from group_sms_chat.infrastructure.fastapi.models.twilio import TwilioIncomingSmsRequest
 from group_sms_chat.infrastructure.fastapi.models.user import (
     NewUserRequest,
     NewUserResponse,
@@ -136,15 +137,18 @@ def create_app(handlers: APIHandlers) -> FastAPI:
             ) from None
 
     @app.post("/webhooks/twilio/sms",
-                status_code=HTTPStatus.NO_CONTENT)
-    async def handle_twilio_incoming_sms(request: TwilioIncomingSmsRequest) -> None:
+              status_code=HTTPStatus.NO_CONTENT)
+    async def handle_twilio_incoming_sms(request: Request) -> None:
         """
         Endpoint to handle incoming SMS messages from Twilio.
         """
+        body = await request.body()
+        parsed_data = dict(urllib.parse.parse_qsl(body.decode("utf-8")))
+
         await handlers.send_group_message.handle(
-            user_number=PhoneNumber(root=request.from_number),
-            group_number=PhoneNumber(root=request.to_number),
-            message=request.body
+            user_number=PhoneNumber(root=parsed_data.get("From", "")),
+            group_number=PhoneNumber(root=parsed_data.get("To", "")),
+            message=parsed_data.get("Body", "")
         )
 
     return app
@@ -152,9 +156,15 @@ def create_app(handlers: APIHandlers) -> FastAPI:
 
 # Initialize the API handlers
 DB_FILE_PATH = "./group_sms_chat.db"
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_PHONE_NUMBERS = os.environ.get("TWILIO_PHONE_NUMBERS", "+15077078635,+19187654321").split(",")
+
 user_repo = SQLiteUserRepository(file_path=DB_FILE_PATH)
 group_repo = SQLiteGroupRepository(file_path=DB_FILE_PATH)
-sms_service = TwilioSMSService()
+sms_service = TwilioSMSService(account_sid=TWILIO_ACCOUNT_SID,
+                               auth_token=TWILIO_AUTH_TOKEN,
+                               phone_numbers=TWILIO_PHONE_NUMBERS)
 
 handlers = APIHandlers(
     validate_user=ValidateUserPasswordHandler(user_repository=user_repo),
