@@ -7,3 +7,4 @@ ruff==0.12.3
 pytest==8.4.1
 pytest-asyncio==1.0.0
 twilio==9.6.5
+python-dotenv==1.1.1

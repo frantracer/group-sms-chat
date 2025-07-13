@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Annotated
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
 
 from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
@@ -155,10 +156,12 @@ def create_app(handlers: APIHandlers) -> FastAPI:
 
 
 # Initialize the API handlers
+load_dotenv()
+
 DB_FILE_PATH = "./group_sms_chat.db"
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
-TWILIO_PHONE_NUMBERS = os.environ.get("TWILIO_PHONE_NUMBERS", "+15077078635,+19187654321").split(",")
+TWILIO_PHONE_NUMBERS = os.environ.get("TWILIO_PHONE_NUMBERS", "").split(",")
 
 user_repo = SQLiteUserRepository(file_path=DB_FILE_PATH)
 group_repo = SQLiteGroupRepository(file_path=DB_FILE_PATH)

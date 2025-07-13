@@ -8,6 +8,7 @@ COPY group_sms_chat ./group_sms_chat
 COPY requirements.txt ./requirements.txt
 COPY pyproject.toml ./pyproject.toml
 COPY Makefile ./Makefile
+COPY .env ./.env
 
 RUN make install
 
