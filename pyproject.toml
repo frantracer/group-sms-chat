@@ -31,7 +31,7 @@ exclude = [".venv"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE", "B", "A", "COM", "C4", "DTZ", "EM", "EXE", "FA", "FBT", "ICN", "INP", "PIE", "PT", "Q", "RET", "SIM", "T20", "TID", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "RUF"]
 ignore = [
-    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D200", "D203", "D212", "PLR6301", "RUF029",
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D200", "D203", "D205", "D400", "D415", "D212", "PLR6301", "RUF029",
     "ANN401", "PLR0913", "FBT001", "FBT002", "S105", "S106", "FA100", "FA102", "COM812"
 ]
 preview = true
