@@ -1,6 +1,6 @@
 install:
 	rm -rf .venv
-	uv venv --python=python3.13.4 .venv
+	uv venv --python=python3.13.5 .venv
 	uv pip install -r requirements.txt
 
 test:
