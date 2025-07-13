@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from group_sms_chat.domain.group import Group, GroupName
-from group_sms_chat.domain.user import Username
+from group_sms_chat.domain.user import PhoneNumber, Username
 
 
 class GroupRepository(ABC):
@@ -39,5 +39,19 @@ class GroupRepository(ABC):
 
         :param user_uuid: The UUID of the user.
         :return: A list of groups that the user belongs to.
+        """
+        ...
+
+    @abstractmethod
+    async def get_user_group_by_user_and_phone(
+            self, username: Username,
+            phone_number: PhoneNumber
+    ) -> Group | None:
+        """
+        Get a group by the user's username and phone number.
+
+        :param username: The username of the user.
+        :param phone_number: The phone number of the user.
+        :return: The group if found, otherwise None.
         """
         ...

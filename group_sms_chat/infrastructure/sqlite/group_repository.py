@@ -11,14 +11,12 @@ class SQLiteGroupRepository(GroupRepository):
 
         self.connection = sqlite3.connect(file_path)
         self.connection.execute(
-            """
-                CREATE TABLE IF NOT EXISTS group_users (
-                    group_name TEXT NOT NULL,
-                    username TEXT NOT NULL,
-                    user_group_phone_number TEXT NOT NULL,
-                    PRIMARY KEY (group_name, username)
-                )
-            """)
+            "CREATE TABLE IF NOT EXISTS group_users ("
+            "    group_name TEXT NOT NULL,"
+            "    username TEXT NOT NULL,"
+            "    user_group_phone_number TEXT NOT NULL,"
+            "    PRIMARY KEY (group_name, username)"
+        )
         self.connection.commit()
 
     async def create_or_update_group(self, group: Group) -> None:
@@ -90,3 +88,17 @@ class SQLiteGroupRepository(GroupRepository):
         cursor = self.connection.cursor()
         cursor.execute("DELETE FROM group_users WHERE group_name = ?", (str(group_name),))
         self.connection.commit()
+
+    async def get_user_group_by_user_and_phone(
+            self, username: Username, phone_number: PhoneNumber
+    ) -> Group | None:
+        cursor = self.connection.cursor()
+        cursor.execute(
+            "SELECT group_name FROM group_users "
+            "WHERE username = ? AND user_group_phone_number = ?",
+            (str(username), str(phone_number))
+        )
+        row = cursor.fetchone()
+        if row:
+            return await self.get_group(GroupName(root=row[0]))
+        return None
