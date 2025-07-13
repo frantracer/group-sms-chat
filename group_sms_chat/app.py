@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from fastapi import Depends, FastAPI, HTTPException
 
 from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
+from group_sms_chat.application.find_groups_handler import FindGroupsHandler
 from group_sms_chat.application.register_user_handler import RegisterUserHandler
 from group_sms_chat.application.validate_user_password import ValidateUserPasswordHandler
 from group_sms_chat.domain.exceptions import (
@@ -33,6 +34,7 @@ class APIHandlers:
     validate_user: ValidateUserPasswordHandler
     register_user: RegisterUserHandler
     create_new_group: CreateNewGroupHandler
+    find_groups: FindGroupsHandler
 
 
 def create_app(handlers: APIHandlers) -> FastAPI:
@@ -86,11 +88,12 @@ def create_app(handlers: APIHandlers) -> FastAPI:
             ) from None
 
     @app.get("/groups")
-    async def find_groups() -> list[Group]:
+    async def find_groups(group_name: str) -> list[Group]:
         """
         Endpoint to find groups.
         """
-        return []
+        groups = await handlers.find_groups.handle(GroupName(root=group_name))
+        return [Group(name=group.name, users=list([user.username for user in group.users])) for group in groups]
 
     @app.post("/groups")
     async def create_group(group_name: GroupName, user: Annotated[User, Depends(get_user)]) -> Group:
@@ -127,6 +130,7 @@ handlers = APIHandlers(
     validate_user=ValidateUserPasswordHandler(user_repository=user_repo),
     register_user=RegisterUserHandler(user_repository=user_repo),
     create_new_group=CreateNewGroupHandler(group_repository=group_repo, sms_service=sms_service),
+    find_groups=FindGroupsHandler(group_repository=group_repo)
 )
 
 app = create_app(handlers)
