@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 
 from group_sms_chat.app import APIHandlers, create_app
 from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
+from group_sms_chat.application.find_groups_handler import FindGroupsHandler
+from group_sms_chat.application.join_group_handler import JoinGroupHandler
 from group_sms_chat.application.register_user_handler import RegisterUserHandler
 from group_sms_chat.application.validate_user_password import ValidateUserPasswordHandler
 
@@ -16,6 +18,8 @@ def handlers() -> APIHandlers:
         validate_user=AsyncMock(spec=ValidateUserPasswordHandler),
         register_user=AsyncMock(spec=RegisterUserHandler),
         create_new_group=AsyncMock(spec=CreateNewGroupHandler),
+        find_groups=AsyncMock(spec=FindGroupsHandler),
+        join_group=AsyncMock(spec=JoinGroupHandler),
     )
 
 

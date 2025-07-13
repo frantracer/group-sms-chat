@@ -1,4 +1,4 @@
-from group_sms_chat.domain.group import GroupName, Group
+from group_sms_chat.domain.group import Group, GroupName
 from group_sms_chat.domain.group_repository import GroupRepository
 
 
@@ -18,5 +18,4 @@ class FindGroupsHandler:
         :param group_name: The name of the group to search for.
         :return: A list of groups that match the given name.
         """
-        groups = await self.group_repository.find_groups_by_name(group_name)
-        return groups
+        return await self.group_repository.find_groups_by_name(group_name)

@@ -6,6 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException
 
 from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
 from group_sms_chat.application.find_groups_handler import FindGroupsHandler
+from group_sms_chat.application.join_group_handler import JoinGroupHandler
 from group_sms_chat.application.register_user_handler import RegisterUserHandler
 from group_sms_chat.application.validate_user_password import ValidateUserPasswordHandler
 from group_sms_chat.domain.exceptions import (
@@ -35,6 +36,7 @@ class APIHandlers:
     register_user: RegisterUserHandler
     create_new_group: CreateNewGroupHandler
     find_groups: FindGroupsHandler
+    join_group: JoinGroupHandler
 
 
 def create_app(handlers: APIHandlers) -> FastAPI:
@@ -93,7 +95,7 @@ def create_app(handlers: APIHandlers) -> FastAPI:
         Endpoint to find groups.
         """
         groups = await handlers.find_groups.handle(GroupName(root=group_name))
-        return [Group(name=group.name, users=list([user.username for user in group.users])) for group in groups]
+        return [Group(name=group.name, users=[user.username for user in group.users]) for group in groups]
 
     @app.post("/groups")
     async def create_group(group_name: GroupName, user: Annotated[User, Depends(get_user)]) -> Group:
@@ -103,12 +105,15 @@ def create_app(handlers: APIHandlers) -> FastAPI:
         new_group = await handlers.create_new_group.handle(group_name=group_name, user=user)
         return Group(name=new_group.name, users=[user.username for user in new_group.users])
 
-    @app.post("/groups/{group_uuid}/users/{username}")
-    async def join_group(group_uuid: str, username: str) -> Any:
+    @app.post("/groups/{group_name}/users/",
+              status_code=HTTPStatus.NO_CONTENT)
+    async def join_group(group_name: str, user: Annotated[User, Depends(get_user)]) -> None:
         """
         Endpoint for a user to join a group.
         """
-        return {"message": f"User {username} joined group {group_uuid}"}
+        await handlers.join_group.handle(
+            group_name=GroupName(root=group_name),
+            user=user)
 
     @app.delete("/groups/{group_uuid}/users/{username}")
     async def leave_group(group_uuid: str, username: str) -> Any:
@@ -130,7 +135,8 @@ handlers = APIHandlers(
     validate_user=ValidateUserPasswordHandler(user_repository=user_repo),
     register_user=RegisterUserHandler(user_repository=user_repo),
     create_new_group=CreateNewGroupHandler(group_repository=group_repo, sms_service=sms_service),
-    find_groups=FindGroupsHandler(group_repository=group_repo)
+    find_groups=FindGroupsHandler(group_repository=group_repo),
+    join_group=JoinGroupHandler(group_repository=group_repo, sms_service=sms_service)
 )
 
 app = create_app(handlers)

@@ -1,3 +1,4 @@
+from group_sms_chat.domain.group import GroupName
 from group_sms_chat.domain.user import PhoneNumber, Username
 
 
@@ -24,3 +25,8 @@ class MaximumNumberOfGroupsReachedError(Exception):
 class UserInvalidCredentialsError(Exception):
     def __init__(self, username: Username) -> None:
         super().__init__(f"Invalid credentials for user '{username}'. Please check your username and password.")
+
+
+class GroupNotFoundError(Exception):
+    def __init__(self, group_name: GroupName) -> None:
+        super().__init__(f"Group '{group_name}' not found.")
