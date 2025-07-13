@@ -1,18 +1,20 @@
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
 
 from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
 from group_sms_chat.application.find_groups_handler import FindGroupsHandler
 from group_sms_chat.application.join_group_handler import JoinGroupHandler
+from group_sms_chat.application.leave_group_handler import LeaveGroupHandler
 from group_sms_chat.application.register_user_handler import RegisterUserHandler
 from group_sms_chat.application.validate_user_password import ValidateUserPasswordHandler
 from group_sms_chat.domain.exceptions import (
     PhoneNumberAlreadyExistsError,
     UserAlreadyExistsError,
     UserInvalidCredentialsError,
+    UserNotInGroupError,
 )
 from group_sms_chat.domain.group import GroupName
 from group_sms_chat.domain.user import HashedPassword, User, Username, UserPassword
@@ -37,6 +39,7 @@ class APIHandlers:
     create_new_group: CreateNewGroupHandler
     find_groups: FindGroupsHandler
     join_group: JoinGroupHandler
+    leave_group: LeaveGroupHandler
 
 
 def create_app(handlers: APIHandlers) -> FastAPI:
@@ -115,12 +118,19 @@ def create_app(handlers: APIHandlers) -> FastAPI:
             group_name=GroupName(root=group_name),
             user=user)
 
-    @app.delete("/groups/{group_uuid}/users/{username}")
-    async def leave_group(group_uuid: str, username: str) -> Any:
+    @app.delete("/groups/{group_name}/users/",
+                status_code=HTTPStatus.NO_CONTENT)
+    async def leave_group(group_name: str, user: Annotated[User, Depends(get_user)]) -> None:
         """
         Endpoint for a user to leave a group.
         """
-        return {"message": f"User {username} left group {group_uuid}"}
+        try:
+            await handlers.leave_group.handle(GroupName(root=group_name), user=user)
+        except UserNotInGroupError:
+            raise HTTPException(
+                status_code=HTTPStatus.NOT_FOUND,
+                detail=f"User {user.username} is not a member of the group {group_name}."
+            ) from None
 
     return app
 
@@ -136,7 +146,8 @@ handlers = APIHandlers(
     register_user=RegisterUserHandler(user_repository=user_repo),
     create_new_group=CreateNewGroupHandler(group_repository=group_repo, sms_service=sms_service),
     find_groups=FindGroupsHandler(group_repository=group_repo),
-    join_group=JoinGroupHandler(group_repository=group_repo, sms_service=sms_service)
+    join_group=JoinGroupHandler(group_repository=group_repo, sms_service=sms_service),
+    leave_group=LeaveGroupHandler(group_repository=group_repo, sms_service=sms_service),
 )
 
 app = create_app(handlers)

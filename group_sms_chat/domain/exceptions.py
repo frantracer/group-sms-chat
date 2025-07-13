@@ -30,3 +30,8 @@ class UserInvalidCredentialsError(Exception):
 class GroupNotFoundError(Exception):
     def __init__(self, group_name: GroupName) -> None:
         super().__init__(f"Group '{group_name}' not found.")
+
+
+class UserNotInGroupError(Exception):
+    def __init__(self, username: Username, group_name: GroupName) -> None:
+        super().__init__(f"User '{username}' is not a member of the group '{group_name}'.")
