@@ -9,7 +9,17 @@ The application uses FastAPI for the backend and SQLite for the database.
 
 This application allow users to register using a mobile phone number, create groups, and send SMS to all the users that joined a group.
 
+Users can join groups using a unique group name, and they can leave groups at any time.
+
+When a user sends a message to a group using their mobile phone, all members of that group receive the message via SMS.
+
 The messages are sent via Twilio's SMS service.
+
+# Restrictions
+
+The number of groups a user can join is limited to the number of Twilio phone numbers you have.
+
+If all the users leave a group, the group will be automatically deleted.
 
 # Run the Application
 
