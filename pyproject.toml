@@ -37,7 +37,7 @@ ignore = [
 preview = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*" = ["S101"]
+"tests/**/*" = ["S101", "PLR2004"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.params.Depends", "fastapi.Query", "fastapi.params.Query"]
