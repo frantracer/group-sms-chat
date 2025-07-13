@@ -33,6 +33,24 @@ class SQLiteGroupRepository(GroupRepository):
             )
         self.connection.commit()
 
+    async def get_group(self, group_name: GroupName) -> Group | None:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT group_name, username, user_group_phone_number "
+                       "FROM group_users WHERE group_name = ?", (str(group_name),))
+        rows = cursor.fetchall()
+
+        if not rows:
+            return None
+
+        group = Group(name=group_name)
+        for row in rows:
+            _, username, user_group_phone_number = row
+            group.add_user(
+                user=Username(root=username), phone_number=PhoneNumber(root=user_group_phone_number)
+            )
+
+        return group
+
     async def find_groups_by_name(self, name: GroupName) -> list[Group]:
         cursor = self.connection.cursor()
         cursor.execute("SELECT group_name, username, user_group_phone_number "

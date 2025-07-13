@@ -15,6 +15,15 @@ class GroupRepository(ABC):
         ...
 
     @abstractmethod
+    async def get_group(self, group_name: GroupName) -> Group | None:
+        """
+        Get a group by its name.
+        :param group_name: The name of the group to retrieve.
+        :return: The group if found, otherwise None.
+        """
+        ...
+
+    @abstractmethod
     async def find_groups_by_name(self, name: GroupName) -> list[Group]:
         """
         Find groups by their name. The search is case-insensitive and matches any part of the name.

@@ -169,3 +169,29 @@ async def test_find_user_groups() -> None:
     # Find groups for user3
     user3_groups = await repo.find_user_groups(Username(root="user3"))
     assert len(user3_groups) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_single_group() -> None:
+    repo = SQLiteGroupRepository(file_path=":memory:")
+
+    group = Group(
+        name=GroupName(root="singlegroup"),
+        users={
+            GroupUser(
+                username=Username(root="user1"),
+                user_group_phone_number=PhoneNumber(root="+1234567890")
+            )
+        }
+    )
+
+    await repo.create_or_update_group(group)
+
+    found_group = await repo.get_group(GroupName(root="singlegroup"))
+    assert found_group is not None
+    assert found_group.name == group.name
+    assert found_group.users == group.users
+
+    # Test getting a non-existent group
+    non_existent_group = await repo.get_group(GroupName(root="nonexistent"))
+    assert non_existent_group is None
