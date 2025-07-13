@@ -90,3 +90,4 @@ https://console.twilio.com/us1/develop/phone-numbers/manage/incoming
 - Error handling for Twilio API calls and database operations
 - Add tests for the handlers
 - Add queue for sending SMS messages
+- Add logging for better debugging and monitoring
