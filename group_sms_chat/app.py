@@ -9,6 +9,7 @@ from group_sms_chat.application.find_groups_handler import FindGroupsHandler
 from group_sms_chat.application.join_group_handler import JoinGroupHandler
 from group_sms_chat.application.leave_group_handler import LeaveGroupHandler
 from group_sms_chat.application.register_user_handler import RegisterUserHandler
+from group_sms_chat.application.send_group_message_handler import SendGroupMessageHandler
 from group_sms_chat.application.validate_user_password import ValidateUserPasswordHandler
 from group_sms_chat.domain.exceptions import (
     PhoneNumberAlreadyExistsError,
@@ -17,8 +18,9 @@ from group_sms_chat.domain.exceptions import (
     UserNotInGroupError,
 )
 from group_sms_chat.domain.group import GroupName
-from group_sms_chat.domain.user import HashedPassword, User, Username, UserPassword
+from group_sms_chat.domain.user import HashedPassword, PhoneNumber, User, Username, UserPassword
 from group_sms_chat.infrastructure.fastapi.models.group import Group
+from group_sms_chat.infrastructure.fastapi.models.twilio import TwilioIncomingSmsRequest
 from group_sms_chat.infrastructure.fastapi.models.user import (
     NewUserRequest,
     NewUserResponse,
@@ -40,6 +42,7 @@ class APIHandlers:
     find_groups: FindGroupsHandler
     join_group: JoinGroupHandler
     leave_group: LeaveGroupHandler
+    send_group_message: SendGroupMessageHandler
 
 
 def create_app(handlers: APIHandlers) -> FastAPI:
@@ -132,6 +135,18 @@ def create_app(handlers: APIHandlers) -> FastAPI:
                 detail=f"User {user.username} is not a member of the group {group_name}."
             ) from None
 
+    @app.post("/webhooks/twilio/sms",
+                status_code=HTTPStatus.NO_CONTENT)
+    async def handle_twilio_incoming_sms(request: TwilioIncomingSmsRequest) -> None:
+        """
+        Endpoint to handle incoming SMS messages from Twilio.
+        """
+        await handlers.send_group_message.handle(
+            user_number=PhoneNumber(root=request.from_number),
+            group_number=PhoneNumber(root=request.to_number),
+            message=request.body
+        )
+
     return app
 
 
@@ -148,6 +163,8 @@ handlers = APIHandlers(
     find_groups=FindGroupsHandler(group_repository=group_repo),
     join_group=JoinGroupHandler(group_repository=group_repo, sms_service=sms_service),
     leave_group=LeaveGroupHandler(group_repository=group_repo, sms_service=sms_service),
+    send_group_message=SendGroupMessageHandler(group_repository=group_repo, user_repository=user_repo,
+                                               sms_service=sms_service),
 )
 
 app = create_app(handlers)

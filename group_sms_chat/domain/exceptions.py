@@ -35,3 +35,8 @@ class GroupNotFoundError(Exception):
 class UserNotInGroupError(Exception):
     def __init__(self, username: Username, group_name: GroupName) -> None:
         super().__init__(f"User '{username}' is not a member of the group '{group_name}'.")
+
+
+class PhoneNotFoundError(Exception):
+    def __init__(self, phone_number: PhoneNumber) -> None:
+        super().__init__(f"Phone number '{phone_number}' not found.")
