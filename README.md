@@ -49,6 +49,29 @@ https://console.twilio.com/us1/develop/phone-numbers/manage/incoming
    http://localhost:9022/docs
    ```
 
+# Development
+
+1. Install the dependencies:
+   ```bash
+   make install
+   ```
+
+2. Run the linter:
+   ```bash
+   make format
+   make lint
+   ```
+
+3. Run the tests:
+   ```bash
+    make test
+    ```
+
+4. Run the application locally:
+   ```bash
+   make run
+   ```
+
 # Future Improvements
 
 - Make the project fully async: database calls and Twilio API calls
@@ -56,3 +79,4 @@ https://console.twilio.com/us1/develop/phone-numbers/manage/incoming
 - Add salt to the password before hashing
 - Error handling for Twilio API calls and database operations
 - Add tests for the handlers
+- Add queue for sending SMS messages
