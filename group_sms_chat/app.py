@@ -1,18 +1,27 @@
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi.applications import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 
+from group_sms_chat.application.create_new_group_handler import CreateNewGroupHandler
 from group_sms_chat.application.register_user_handler import RegisterUserHandler
-from group_sms_chat.domain.exceptions import UserAlreadyExistsError, PhoneNumberAlreadyExistsError
-from group_sms_chat.domain.user import HashedPassword, User
+from group_sms_chat.application.validate_user_password import ValidateUserPasswordHandler
+from group_sms_chat.domain.exceptions import (
+    PhoneNumberAlreadyExistsError,
+    UserAlreadyExistsError,
+    UserInvalidCredentialsError,
+)
+from group_sms_chat.domain.group import GroupName
+from group_sms_chat.domain.user import HashedPassword, User, Username, UserPassword
 from group_sms_chat.infrastructure.fastapi.models.group import Group
 from group_sms_chat.infrastructure.fastapi.models.user import (
-    LoginRequest,
-    NewUserRequest, NewUserResponse,
+    NewUserRequest,
+    NewUserResponse,
 )
+from group_sms_chat.infrastructure.sqlite.group_repository import SQLiteGroupRepository
 from group_sms_chat.infrastructure.sqlite.user_repository import SQLiteUserRepository
+from group_sms_chat.infrastructure.twilio.sms_service import TwilioSMSService
 
 
 @dataclass
@@ -21,7 +30,9 @@ class APIHandlers:
     List all the API handlers for the FastAPI application.
     """
 
+    validate_user: ValidateUserPasswordHandler
     register_user: RegisterUserHandler
+    create_new_group: CreateNewGroupHandler
 
 
 def create_app(handlers: APIHandlers) -> FastAPI:
@@ -29,6 +40,18 @@ def create_app(handlers: APIHandlers) -> FastAPI:
     Create and return a FastAPI application instance.
     """
     app = FastAPI()
+
+    async def get_user(username: Username, password: UserPassword) -> User:
+        """
+        Dependency to get the current user.
+        """
+        try:
+            return await handlers.validate_user.handle(username, password)
+        except UserInvalidCredentialsError:
+            raise HTTPException(
+                status_code=HTTPStatus.UNAUTHORIZED,
+                detail="Invalid username or password."
+            ) from None
 
     @app.get("/health")
     async def health_check() -> dict[str, str]:
@@ -55,19 +78,12 @@ def create_app(handlers: APIHandlers) -> FastAPI:
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
                 detail=f"User with username {user.username} already exists."
-            )
+            ) from None
         except PhoneNumberAlreadyExistsError:
             raise HTTPException(
                 status_code=HTTPStatus.CONFLICT,
                 detail=f"User with phone number {user.phone_number} already exists."
-            )
-
-    @app.post("/login")
-    async def login_user(user: LoginRequest) -> Any:
-        """
-        Endpoint to log in a user.
-        """
-        return {"message": "User logged in successfully", "user": user}
+            ) from None
 
     @app.get("/groups")
     async def find_groups() -> list[Group]:
@@ -77,11 +93,12 @@ def create_app(handlers: APIHandlers) -> FastAPI:
         return []
 
     @app.post("/groups")
-    async def create_group(group: Group) -> Group:
+    async def create_group(group_name: GroupName, user: Annotated[User, Depends(get_user)]) -> Group:
         """
         Endpoint to create a new group.
         """
-        return Group(uuid=group.uuid, name=group.name)
+        new_group = await handlers.create_new_group.handle(group_name=group_name, user=user)
+        return Group(name=new_group.name, users=[user.username for user in new_group.users])
 
     @app.post("/groups/{group_uuid}/users/{username}")
     async def join_group(group_uuid: str, username: str) -> Any:
@@ -101,10 +118,15 @@ def create_app(handlers: APIHandlers) -> FastAPI:
 
 
 # Initialize the API handlers
-user_repo = SQLiteUserRepository(file_path="./group_sms_chat.db")
+DB_FILE_PATH = "./group_sms_chat.db"
+user_repo = SQLiteUserRepository(file_path=DB_FILE_PATH)
+group_repo = SQLiteGroupRepository(file_path=DB_FILE_PATH)
+sms_service = TwilioSMSService()
 
 handlers = APIHandlers(
-    register_user=RegisterUserHandler(user_repository=user_repo)
+    validate_user=ValidateUserPasswordHandler(user_repository=user_repo),
+    register_user=RegisterUserHandler(user_repository=user_repo),
+    create_new_group=CreateNewGroupHandler(group_repository=group_repo, sms_service=sms_service),
 )
 
 app = create_app(handlers)
