@@ -5,7 +5,7 @@ from group_sms_chat.domain.exceptions import (
     UnhandledError,
     UserAlreadyExistsError,
 )
-from group_sms_chat.domain.user import User, Username
+from group_sms_chat.domain.user import PhoneNumber, User, Username
 from group_sms_chat.domain.user_repository import UserRepository
 
 
@@ -37,6 +37,16 @@ class SQLiteUserRepository(UserRepository):
     async def get_user(self, username: Username) -> User | None:
         cursor = self.connection.cursor()
         cursor.execute("SELECT username, phone_number, hashed_password FROM users WHERE username = ?", (str(username),))
+        row = cursor.fetchone()
+        if row:
+            return User(username=Username(root=row[0]), phone_number=row[1], hashed_password=row[2])
+        return None
+
+    async def get_user_by_phone_number(self, phone_number: PhoneNumber) -> User | None:
+        cursor = self.connection.cursor()
+        cursor.execute("SELECT username, phone_number, hashed_password "
+                       "FROM users WHERE phone_number = ?",
+                       (str(phone_number),))
         row = cursor.fetchone()
         if row:
             return User(username=Username(root=row[0]), phone_number=row[1], hashed_password=row[2])

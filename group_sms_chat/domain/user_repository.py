@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from group_sms_chat.domain.user import User, Username
+from group_sms_chat.domain.user import PhoneNumber, User, Username
 
 
 class UserRepository(ABC):
@@ -15,6 +15,13 @@ class UserRepository(ABC):
     async def get_user(self, username: Username) -> User | None:
         """
         Retrieve a user by their username.
+        """
+        ...
+
+    @abstractmethod
+    async def get_user_by_phone_number(self, phone_number: PhoneNumber) -> User | None:
+        """
+        Retrieve a user by their phone number.
         """
         ...
 

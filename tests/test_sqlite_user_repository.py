@@ -68,3 +68,18 @@ async def test_create_existing_phone_number_raises_an_error() -> None:
     await repo.add_user(user)
     with pytest.raises(PhoneNumberAlreadyExistsError):
         await repo.add_user(user2)
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_phone_number() -> None:
+    repo = SQLiteUserRepository(file_path=":memory:")
+
+    user = User(
+        username=Username("testuser"),
+        phone_number=PhoneNumber("+1234567890"),
+        hashed_password=HashedPassword.from_string(UserPassword("password123"))
+    )
+
+    await repo.add_user(user)
+    retrieved_user = await repo.get_user_by_phone_number(user.phone_number)
+    assert retrieved_user == user
