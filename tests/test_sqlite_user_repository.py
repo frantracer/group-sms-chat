@@ -1,7 +1,7 @@
 import pytest
 
 from group_sms_chat.domain.exceptions import PhoneNumberAlreadyExistsError, UserAlreadyExistsError
-from group_sms_chat.domain.user import HashedPassword, PhoneNumber, User, Username
+from group_sms_chat.domain.user import HashedPassword, PhoneNumber, User, Username, UserPassword
 from group_sms_chat.infrastructure.sqlite.user_repository import SQLiteUserRepository
 
 
@@ -12,7 +12,7 @@ async def test_create_user() -> None:
     user = User(
         username=Username("testuser"),
         phone_number=PhoneNumber("+1234567890"),
-        hashed_password=HashedPassword.from_string("password123")
+        hashed_password=HashedPassword.from_string(UserPassword("password123"))
     )
 
     await repo.add_user(user)
@@ -35,13 +35,13 @@ async def test_create_same_username_twice_raises_an_error() -> None:
     user = User(
         username=Username("testuser"),
         phone_number=PhoneNumber("+1234567890"),
-        hashed_password=HashedPassword.from_string("password123")
+        hashed_password=HashedPassword.from_string(UserPassword("password123"))
     )
 
     user2 = User(
         username=Username("testuser"),
         phone_number=PhoneNumber("+0987654321"),
-        hashed_password=HashedPassword.from_string("anotherpassword")
+        hashed_password=HashedPassword.from_string(UserPassword("anotherpassword"))
     )
 
     await repo.add_user(user)
@@ -56,13 +56,13 @@ async def test_create_existing_phone_number_raises_an_error() -> None:
     user = User(
         username=Username("testuser"),
         phone_number=PhoneNumber("+1234567890"),
-        hashed_password=HashedPassword.from_string("password123")
+        hashed_password=HashedPassword.from_string(UserPassword("password123"))
     )
 
     user2 = User(
         username=Username("anotheruser"),
         phone_number=PhoneNumber("+1234567890"),
-        hashed_password=HashedPassword.from_string("anotherpassword")
+        hashed_password=HashedPassword.from_string(UserPassword("anotherpassword"))
     )
 
     await repo.add_user(user)
